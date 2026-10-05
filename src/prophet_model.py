@@ -2,7 +2,7 @@
 """
 This final Prophet evaluation script uses the locked parameters selected in
 prophet_experiments.ipynb:
-- changepoint_prior_scale = 0.01
+- changepoint_prior_scale = 0.005
 - seasonality_prior_scale = 1.0
 - daily seasonality: custom period=1 day, fourier_order=16
 - yearly seasonality: custom period=365.25 days, fourier_order=20
@@ -10,11 +10,11 @@ prophet_experiments.ipynb:
 - seasonality_mode = additive, Prophet default
 
 Final held-out test metrics from this locked scheme:
-- MAE = 5.610 °F
-- RMSE = 6.775 °F
-- MASE = 0.958
-- R^2 = 0.299
-- Bias = -4.851 °F
+- MAE = 5.446 °F
+- RMSE = 6.632 °F
+- MASE = 0.930
+- R^2 = 0.331
+- Bias = -4.648 °F
 - Hours evaluated = 336
 
 It trains on train + validation data, predicts the held-out test set, prints
@@ -45,7 +45,7 @@ import pandas as pd
 with contextlib.redirect_stderr(io.StringIO()):
     from prophet import Prophet
 
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from evaluation import calculate_metrics, make_mase_scale
 
 
 warnings.filterwarnings("ignore")
@@ -58,7 +58,7 @@ PREDICTION_DIR = PROJECT_ROOT / "outputs" / "predictions"
 PREDICTION_PATH = PREDICTION_DIR / "prophet_test_predictions.csv"
 
 BEST_PROPHET_PARAMS = {
-    "changepoint_prior_scale": 0.01,
+    "changepoint_prior_scale": 0.005,
     "seasonality_prior_scale": 1.0,
     "weekly_seasonality": True,
     "daily_fourier_order": 16,
@@ -72,27 +72,6 @@ def load_split(name: str) -> pd.DataFrame:
     df = pd.read_csv(path)
     df["ds"] = pd.to_datetime(df["ds"], utc=True).dt.tz_localize(None)
     return df.sort_values("ds").reset_index(drop=True)
-
-
-def make_mase_scale(train_df, lag=24):
-    # Keep the complete hourly timeline, including missing temperatures
-    data = train_df.sort_values("ds").copy()
-
-    # Check that each row represents one consecutive hour
-    assert data["ds"].diff().dropna().eq(
-        pd.Timedelta(hours=1)
-    ).all(), "MASE requires a complete hourly timeline."
-
-    y = data.set_index("ds")["y"]
-
-    # Compare each temperature with the temperature 24 hours earlier
-    # Missing pairs are automatically excluded from the mean
-    scale = (y - y.shift(lag)).abs().mean()
-
-    if not np.isfinite(scale) or scale <= 0:
-        raise ValueError("MASE scale is zero or invalid.")
-
-    return float(scale)
 
 
 def build_model() -> Prophet:
@@ -117,29 +96,6 @@ def build_model() -> Prophet:
         fourier_order=BEST_PROPHET_PARAMS["yearly_fourier_order"],
     )
     return model
-
-
-def calculate_metrics(
-    y_true: pd.Series,
-    y_pred: pd.Series,
-    mase_scale: float,
-) -> dict[str, float]:
-    """Calculate forecast metrics for Prophet predictions."""
-    mask = y_true.notna() & y_pred.notna() & np.isfinite(y_pred)
-    actual = y_true[mask].astype(float)
-    predicted = y_pred[mask].astype(float)
-
-    mae = mean_absolute_error(actual, predicted)
-    rmse = np.sqrt(mean_squared_error(actual, predicted))
-
-    return {
-        "mae": float(mae),
-        "rmse": float(rmse),
-        "mase": float(mae / mase_scale),
-        "r2": float(r2_score(actual, predicted)),
-        "bias": float((predicted - actual).mean()),
-        "hours_evaluated": int(mask.sum()),
-    }
 
 
 def main() -> None:

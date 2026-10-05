@@ -20,6 +20,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+# All boundaries are UTC; upper boundaries are exclusive
+# same thing as forecasting EDT [2026-9-17 00:00:00 -  2026.10.01 00:00:00) 
+FORECAST_START = pd.Timestamp("2026-09-17 04:00:00", tz="UTC")
+FORECAST_END = pd.Timestamp("2026-10-01 04:00:00", tz="UTC")
+
+TEST_START = FORECAST_START - pd.Timedelta(days=14)
+VAL_START = TEST_START - pd.Timedelta(days=14)
+
 
 def clean_hourly_data(raw, start, end):
     """Select the valid observation nearest :51 and restore the hourly grid."""
@@ -144,9 +152,9 @@ def main():
     args = parser.parse_args()
 
     start = pd.to_datetime(args.start, utc=True)
-    val_start = pd.Timestamp("2026-08-20", tz="UTC")
-    test_start = pd.Timestamp("2026-09-03", tz="UTC")
-    end = pd.Timestamp("2026-09-17", tz="UTC")
+    val_start = VAL_START
+    test_start = TEST_START
+    end = FORECAST_START
     if pd.isna(start) or start != start.floor("h") or start >= val_start:
         parser.error("--start must be an exact hour before 2026-08-20 UTC.")
     if not args.input.is_file():
