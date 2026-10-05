@@ -1,7 +1,0 @@
-{
-  "lookbacks": [null, 5, 3],
-  "models": [
-    {"name": "month_hour"},
-    {"name": "repeat_last_day"}
-  ]
-}
