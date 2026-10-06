@@ -19,14 +19,15 @@ from .gradient_boosting_features import (
     make_direct_training_data, require_hourly_grid, required_weather_columns,
 )
 
-# Starting settings from the earlier calendar experiments; grids can override them.
+# Selected by time-window validation in notebooks/gradient_boosting_analysis.ipynb.
+# The bounded follow-up favored min_samples_leaf=100 by <0.001 F. Grids can override.
 DEFAULT_GRADIENT_BOOSTING_PARAMS = {
     "loss": "squared_error",
     "learning_rate": 0.05,
     "max_iter": 150,
     "max_leaf_nodes": 7,
     "max_depth": None,
-    "min_samples_leaf": 50,
+    "min_samples_leaf": 100,
     "l2_regularization": 1.0,
     "early_stopping": False,
     "random_state": 520,
