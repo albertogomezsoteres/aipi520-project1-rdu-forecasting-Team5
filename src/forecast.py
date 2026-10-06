@@ -14,13 +14,14 @@ from .evaluation import validate_predictions
 from .features import add_time_features
 
 
-def generate_forecast(hourly: pd.DataFrame, selection: dict, predictor=None):
+def generate_forecast(hourly: pd.DataFrame, selection: dict, predictor=None, *, include_weather=False):
     """Use all eligible observations within the selected lookback; no scoring.
 
     The saved ds values label the containing UTC hours. For example 04:00 UTC
     on September 17 predicts the routine 04:51 UTC / 00:51 Eastern report.
+    Optional weather is retained in history only; future observations are unknown.
     """
-    data = validate_hourly_data(hourly)
+    data = validate_hourly_data(hourly, include_weather=include_weather)
     history = select_history(data, FORECAST_START, selection.get("lookback_years"))
     future = add_time_features(pd.DataFrame({"ds": SUBMISSION_WINDOW.timestamps()}))
     if predictor is None:
@@ -65,9 +66,11 @@ def main():
     parser.add_argument("--selection", type=Path, required=True, help="Configuration selected using validation, never audit labels.")
     parser.add_argument("--data", type=Path, default=DATA_DIR / "hourly.csv")
     parser.add_argument("--output", type=Path, default=OUTPUT_DIR / "predictions/final_predictions.csv")
+    parser.add_argument("--include-weather", action="store_true", help="Retain historical weather from hourly.csv for model inputs.")
     args = parser.parse_args()
     selection = load_selection(args.selection)
-    forecast, history = generate_forecast(load_hourly_data(args.data), selection)
+    hourly = load_hourly_data(args.data, include_weather=args.include_weather)
+    forecast, history = generate_forecast(hourly, selection, include_weather=args.include_weather)
     save_forecast(forecast, history, selection, args.output)
     print(f"Saved {len(forecast)} finite hourly predictions to {args.output.resolve()}")
 

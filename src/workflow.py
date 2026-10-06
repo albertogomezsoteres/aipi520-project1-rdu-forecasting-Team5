@@ -103,19 +103,21 @@ def attach_model_names(frame, candidates):
     return result
 
 
-def tune_models(hourly, experiment, windows=VALIDATION_WINDOWS):
+def tune_models(hourly, experiment, windows=VALIDATION_WINDOWS, *, include_weather=False):
     """Compare all candidates on identical windows; choose by equal-window MAE.
 
     No audit or submission targets participate in selection. Each backtest fits
     fresh model state. A failed candidate stops the run rather than selecting
     from an incomplete comparison.
+    Optional weather is supplied only through each fold's historical inputs.
     """
     candidates, lookbacks = expand_candidates(experiment)
     predictors = {
         key: get_predictor(config["model"], config["params"], config["feature_columns"])
         for key, config in candidates.items()
     }
-    metrics, predictions = run_backtests(hourly, predictors, lookbacks, windows)
+    metrics, predictions = run_backtests(hourly, predictors, lookbacks, windows,
+                                        include_weather=include_weather)
     summary = summarize_results(metrics)
     best = summary.iloc[0]
     selected = {
@@ -131,11 +133,12 @@ def tune_models(hourly, experiment, windows=VALIDATION_WINDOWS):
             attach_model_names(summary, candidates), selected)
 
 
-def run_workflow(config_path=DEFAULT_CONFIG, input_path=RAW_PATH, output_dir=None):
+def run_workflow(config_path=DEFAULT_CONFIG, input_path=RAW_PATH, output_dir=None, *, include_weather=False):
     """Run the full workflow and return the saved run-summary dictionary.
 
     Existing output directories are refused to avoid mixing runs. Input raw
     data is never modified; processed data is saved inside this run's folder.
+    include_weather enables optional historical inputs throughout the run.
     """
     experiment = load_experiment(config_path)
     candidates, lookbacks = expand_candidates(experiment)
@@ -159,14 +162,15 @@ def run_workflow(config_path=DEFAULT_CONFIG, input_path=RAW_PATH, output_dir=Non
 
     print(f"Run folder: {output_dir}", flush=True)
     print("Preparing hourly data...", flush=True)
-    hourly, _, cleaning = prepare_data(input_path, output_dir / "data_processed")
+    hourly, _, cleaning = prepare_data(input_path, output_dir / "data_processed",
+                                       include_weather=include_weather)
     # Check historical coverage before starting expensive model fits.
     for window in (*VALIDATION_WINDOWS, AUDIT_WINDOW):
         for lookback in lookbacks:
             make_fold(hourly, window, lookback)
     fits = len(candidates) * len(lookbacks) * len(VALIDATION_WINDOWS)
     print(f"Tuning {len(expanded)} candidate/history combinations: {fits} validation fits.", flush=True)
-    metrics, predictions, summary, selected = tune_models(hourly, experiment)
+    metrics, predictions, summary, selected = tune_models(hourly, experiment, include_weather=include_weather)
     metrics.to_csv(output_dir / "validation_metrics.csv", index=False)
     predictions.to_csv(output_dir / "validation_predictions.csv", index=False)
     summary.to_csv(output_dir / "validation_summary.csv", index=False)
@@ -178,14 +182,15 @@ def run_workflow(config_path=DEFAULT_CONFIG, input_path=RAW_PATH, output_dir=Non
         selected["model"], selected["params"], selected["feature_columns"]
     )
     audit_metrics, audit_predictions = run_backtests(
-        hourly, audit_predictors, [selected["lookback_years"]], [AUDIT_WINDOW]
+        hourly, audit_predictors, [selected["lookback_years"]], [AUDIT_WINDOW],
+        include_weather=include_weather,
     )
     audit_metrics.to_csv(output_dir / "audit_metrics.csv", index=False)
     audit_predictions.to_csv(output_dir / "audit_predictions.csv", index=False)
     summarize_results(audit_metrics).to_csv(output_dir / "audit_summary.csv", index=False)
 
     print("Refitting the selected configuration and forecasting...", flush=True)
-    forecast, history = generate_forecast(hourly, selected)
+    forecast, history = generate_forecast(hourly, selected, include_weather=include_weather)
     metadata = save_forecast(forecast, history, selected, output_dir / "final_predictions.csv")
     audit_row = audit_metrics.loc[audit_metrics["model"] == selected["model"]].iloc[0]
     run_summary = {
@@ -195,7 +200,7 @@ def run_workflow(config_path=DEFAULT_CONFIG, input_path=RAW_PATH, output_dir=Non
         "source_sha256": {str(path.relative_to(PROJECT_ROOT)): file_sha256(path)
                           for path in sorted((PROJECT_ROOT / "src").glob("*.py"))},
         "experiment": experiment, "candidate_history_combinations": len(expanded),
-        "validation_fits": fits, "cleaning": cleaning,
+        "validation_fits": fits, "cleaning": cleaning, "include_weather": include_weather,
         "selection": selected, "selected_audit_mae": float(audit_row["mae"]),
         "audit_used_for_selection": False, "forecast": metadata,
         "outputs": {path.name: str(path) for path in sorted(output_dir.glob("*")) if path.is_file()},
@@ -217,8 +222,9 @@ def main():
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--input", type=Path, default=RAW_PATH)
     parser.add_argument("--output-dir", type=Path, help="New run folder; default is a UTC-timestamped outputs/runs folder.")
+    parser.add_argument("--include-weather", action="store_true", help="Include optional historical weather inputs throughout this run.")
     args = parser.parse_args()
-    run_workflow(args.config, args.input, args.output_dir)
+    run_workflow(args.config, args.input, args.output_dir, include_weather=args.include_weather)
 
 
 if __name__ == "__main__":

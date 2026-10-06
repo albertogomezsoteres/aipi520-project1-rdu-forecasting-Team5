@@ -47,13 +47,15 @@ def make_fold(hourly: pd.DataFrame, window: ForecastWindow, lookback_years=None)
     return add_time_features(history), future, actual
 
 
-def run_backtests(hourly, predictors: dict[str, Predictor], lookbacks=(None,), windows=VALIDATION_WINDOWS):
+def run_backtests(hourly, predictors: dict[str, Predictor], lookbacks=(None,), windows=VALIDATION_WINDOWS,
+                  *, include_weather=False):
     """Refit each candidate at each origin; return metrics and hourly predictions.
 
     MASE uses all available pre-origin history for every candidate in a fold.
     Labels are held separately and never passed into the predictor's future frame.
+    Optional weather is passed only in pre-origin history, never future inputs.
     """
-    data = validate_hourly_data(hourly)
+    data = validate_hourly_data(hourly, include_weather=include_weather)
     rows, comparisons = [], []
     for window in windows:
         reference_history = select_history(data, window.start)
@@ -130,6 +132,7 @@ def main():
     parser.add_argument("--lookbacks", nargs="+", default=["all", "5", "3"])
     parser.add_argument("--audit", action="store_true", help="Evaluate a locked selection; do not select from audit results.")
     parser.add_argument("--selection", type=Path, help="Required with --audit.")
+    parser.add_argument("--include-weather", action="store_true", help="Retain historical weather from hourly.csv for model inputs.")
     args = parser.parse_args()
     if args.audit:
         if args.selection is None:
@@ -152,7 +155,9 @@ def main():
         predictors = {name: get_predictor(name) for name in dict.fromkeys(args.models)}
         windows, prefix = VALIDATION_WINDOWS, "validation"
     lookbacks = list(dict.fromkeys(lookbacks))
-    metrics, predictions = run_backtests(load_hourly_data(args.data), predictors, lookbacks, windows)
+    hourly = load_hourly_data(args.data, include_weather=args.include_weather)
+    metrics, predictions = run_backtests(hourly, predictors, lookbacks, windows,
+                                        include_weather=args.include_weather)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     metrics.to_csv(args.output_dir / f"{prefix}_metrics.csv", index=False)
     predictions.to_csv(args.output_dir / f"{prefix}_predictions.csv", index=False)
