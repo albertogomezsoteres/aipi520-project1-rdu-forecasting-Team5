@@ -27,7 +27,7 @@ class WorkflowTests(unittest.TestCase):
     def test_default_grid_includes_original_prophet_and_resolves_features(self):
         config = Path(__file__).resolve().parents[1] / "configs/experiment.json"
         candidates, lookbacks = expand_candidates(json.loads(config.read_text()))
-        self.assertEqual(len(candidates), 6)
+        self.assertEqual(len(candidates), 7)  # 2 baselines + 4 Prophet + 1 linear regression
         self.assertEqual(lookbacks, [None, 5, 3])
         prophet = [candidate for candidate in candidates.values() if candidate["model"] == "prophet"]
         self.assertTrue(any(candidate["params"]["daily_fourier_order"] == 16 and
@@ -38,7 +38,7 @@ class WorkflowTests(unittest.TestCase):
     def test_invalid_candidates_fail_before_fitting(self):
         invalid = [
             {"lookbacks": [True], "models": [{"name": "month_hour"}]},
-            {"lookbacks": [None], "models": [{"name": "linear_regression"}]},
+            {"lookbacks": [None], "models": [{"name": "gradient_boosting"}]},  # not registered yet
             {"lookbacks": [None], "models": [{"name": "prophet", "param_grid": {"unknown": [1]}}]},
             {"lookbacks": [None], "models": [{"name": "prophet", "param_grid": {"daily_fourier_order": [0]}}]},
             {"lookbacks": [None], "models": [{"name": "prophet", "feature_sets": [["y"]]}]},

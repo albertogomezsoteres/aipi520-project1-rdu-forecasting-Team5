@@ -6,8 +6,7 @@ Keep model-specific preprocessing inside the adapter and fit it on history only.
 
 from .baselines import BASELINE_NAMES, predict_baseline
 
-MODEL_NAMES = (*BASELINE_NAMES, "prophet")
-# TODO(linear-regression): Add "linear_regression" after its adapter is ready.
+MODEL_NAMES = (*BASELINE_NAMES, "prophet", "linear_regression")
 # TODO(gradient-boosting): Add "gradient_boosting" after its adapter is ready.
 
 
@@ -30,7 +29,7 @@ def model_config(name, params=None, feature_columns=None):
             raise ValueError("Feature columns must be a nonempty list of unique names.")
         if {"y", "yhat", "ds"}.intersection(feature_columns):
             raise ValueError("Feature columns cannot include labels, predictions, or ds.")
-        if name in (*BASELINE_NAMES, "prophet"):
+        if name in (*BASELINE_NAMES, "prophet", "linear_regression"):
             raise ValueError(f"{name} uses fixed inputs; its feature_sets must contain only null.")
 
     if name in BASELINE_NAMES:
@@ -62,9 +61,12 @@ def model_config(name, params=None, feature_columns=None):
         if params["weekly_seasonality"]:
             components.append("weekly Fourier seasonality, Prophet default order 3")
         features = {"input_columns": ["ds"], "components": components}
+    elif name == "linear_regression":
+        # LR builds its own features from ds and past y, so feature_columns stays null
+        from .linear_regression_model import describe_linear_regression, resolve_linear_regression_params
+        params = resolve_linear_regression_params(params)
+        features = {"input_columns": ["ds", "y (history only)"], "components": describe_linear_regression(params)}
     else:
-        # TODO(linear-regression): Resolve estimator defaults, validate feature_columns,
-        # and describe the actual columns/transforms used by predict_linear_regression.
         # TODO(gradient-boosting): Do the same for predict_gradient_boosting. Describe
         # any lag/rolling features and recursive updates in the saved components.
         raise ValueError(f"No configuration resolver registered for {name}.")
@@ -80,8 +82,10 @@ def get_predictor(name, params=None, feature_columns=None):
     if name == "prophet":
         from .prophet_model import predict_prophet
         return lambda history, future: predict_prophet(history, future, config["params"])
-    # TODO(linear-regression): Import its adapter here and pass config["params"]
-    # and config["feature_columns"]. Fit scaling/imputation on history only.
+    if name == "linear_regression":
+        from .linear_regression_model import predict_linear_regression
+        return lambda history, future: predict_linear_regression(
+            history, future, config["params"], config["feature_columns"])
     # TODO(gradient-boosting): Import its adapter here and pass the same settings.
     # Build lags on the complete hourly grid before dropping missing training y;
     # after the origin, recursive features must use predictions, never actual y.
