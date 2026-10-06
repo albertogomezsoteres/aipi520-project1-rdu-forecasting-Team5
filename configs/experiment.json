@@ -10,6 +10,10 @@
         "daily_fourier_order": [6, 16]
       },
       "feature_sets": [null]
+    },
+    {
+      "name": "linear_regression",
+      "feature_sets": [null]
     }
   ]
 }
