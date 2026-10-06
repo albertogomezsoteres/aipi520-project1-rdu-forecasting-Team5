@@ -11,8 +11,9 @@ from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
+from threadpoolctl import threadpool_limits
 
-from src.backtesting import load_selection
+from src.backtesting import load_selection, run_backtests
 from src.config import FORECAST_START, SUBMISSION_WINDOW, VALIDATION_WINDOWS
 from src.models import model_config
 from src.workflow import expand_candidates, file_sha256, run_workflow, tune_models
@@ -27,7 +28,7 @@ class WorkflowTests(unittest.TestCase):
     def test_default_grid_includes_original_prophet_and_resolves_features(self):
         config = Path(__file__).resolve().parents[1] / "configs/experiment.json"
         candidates, lookbacks = expand_candidates(json.loads(config.read_text()))
-        self.assertEqual(len(candidates), 7)  # 2 baselines + 4 Prophet + 1 linear regression
+        self.assertEqual(len(candidates), 8)  # 2 baselines + 4 Prophet + linear regression + boosting
         self.assertEqual(lookbacks, [None, 5, 3])
         prophet = [candidate for candidate in candidates.values() if candidate["model"] == "prophet"]
         self.assertTrue(any(candidate["params"]["daily_fourier_order"] == 16 and
@@ -38,7 +39,7 @@ class WorkflowTests(unittest.TestCase):
     def test_invalid_candidates_fail_before_fitting(self):
         invalid = [
             {"lookbacks": [True], "models": [{"name": "month_hour"}]},
-            {"lookbacks": [None], "models": [{"name": "gradient_boosting"}]},  # not registered yet
+            {"lookbacks": [None], "models": [{"name": "unregistered_model"}]},
             {"lookbacks": [None], "models": [{"name": "prophet", "param_grid": {"unknown": [1]}}]},
             {"lookbacks": [None], "models": [{"name": "prophet", "param_grid": {"daily_fourier_order": [0]}}]},
             {"lookbacks": [None], "models": [{"name": "prophet", "feature_sets": [["y"]]}]},
@@ -130,6 +131,63 @@ class WorkflowTests(unittest.TestCase):
             path.write_text(json.dumps(selected))
             with self.assertRaisesRegex(ValueError, "feature metadata"):
                 load_selection(path)
+
+    def test_validation_only_saves_selection_without_audit_or_forecast(self):
+        experiment = {"lookbacks": [3], "models": [{"name": "gradient_boosting",
+                      "param_grid": {"max_iter": [3]}}]}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            raw, config, output = root / "raw.csv", root / "config.json", root / "run"
+            pd.DataFrame({"station": "RDU", "valid": self.hourly["ds"] + pd.Timedelta(minutes=51),
+                          "tmpf": self.hourly["y"]}).to_csv(raw, index=False)
+            config.write_text(json.dumps(experiment))
+            with patch("src.workflow.run_backtests", wraps=run_backtests) as runner, \
+                    patch("src.workflow.generate_forecast") as forecast, \
+                    threadpool_limits(limits=2), contextlib.redirect_stdout(io.StringIO()):
+                report = run_workflow(config, raw, output, validation_only=True)
+            self.assertEqual(runner.call_count, 1)
+            self.assertEqual(tuple(runner.call_args.args[3]), VALIDATION_WINDOWS)
+            forecast.assert_not_called()
+            self.assertTrue(report["validation_only"])
+            self.assertFalse(report["audit_evaluated"])
+            self.assertNotIn("forecast", report)
+            self.assertNotIn("selected_audit_mae", report)
+            self.assertFalse(list(output.glob("audit_*")))
+            self.assertFalse((output / "final_predictions.csv").exists())
+            self.assertEqual(report["validation_fits"], len(VALIDATION_WINDOWS))
+            self.assertEqual(load_selection(output / "selected_config.json"), report["selection"])
+            self.assertEqual(json.loads((output / "run_summary.json").read_text()), report)
+
+    def test_weather_boosting_workflow_keeps_selected_configuration_through_final_refit(self):
+        from src.features import CALENDAR_FEATURES
+        from src.gradient_boosting_features import TEMPERATURE_CONTEXT, WEATHER_GROUPS
+
+        columns = CALENDAR_FEATURES + ["forecast_hour"] + TEMPERATURE_CONTEXT + WEATHER_GROUPS["wind_speed"]
+        experiment = {"lookbacks": [3], "models": [{"name": "gradient_boosting",
+                      "param_grid": {"max_iter": [3]}, "feature_sets": [columns]}]}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            raw, config, output = root / "raw.csv", root / "config.json", root / "run"
+            pd.DataFrame({"station": "RDU", "valid": self.hourly["ds"] + pd.Timedelta(minutes=51),
+                          "tmpf": self.hourly["y"], "sknt": 5.}).to_csv(raw, index=False)
+            config.write_text(json.dumps(experiment))
+            with threadpool_limits(limits=2), contextlib.redirect_stdout(io.StringIO()):
+                report = run_workflow(config, raw, output, include_weather=True)
+            self.assertTrue(report["audit_evaluated"])
+            self.assertFalse(report["validation_only"])
+            self.assertFalse(report["audit_used_for_selection"])
+            selected = load_selection(output / "selected_config.json")
+            self.assertEqual(selected["model"], "gradient_boosting")
+            self.assertEqual(selected["params"]["max_iter"], 3)
+            self.assertEqual(selected["feature_columns"], columns)
+            self.assertEqual(selected, report["forecast"]["selection"])
+            self.assertEqual(report["forecast"]["train_last_hour_utc"],
+                             (FORECAST_START - pd.Timedelta(hours=1)).isoformat())
+            predictions = pd.read_csv(output / "final_predictions.csv")
+            self.assertEqual(predictions.columns.tolist(), ["ds", "yhat"])
+            self.assertTrue(pd.DatetimeIndex(pd.to_datetime(predictions["ds"], utc=True)).equals(
+                SUBMISSION_WINDOW.timestamps()))
+            self.assertTrue(np.isfinite(predictions["yhat"]).all())
 
 
 if __name__ == "__main__":
