@@ -14,6 +14,10 @@
     {
       "name": "linear_regression",
       "feature_sets": [null]
+    },
+    {
+      "name": "gradient_boosting",
+      "feature_sets": [null]
     }
   ]
 }

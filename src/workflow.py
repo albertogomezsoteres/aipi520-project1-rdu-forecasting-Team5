@@ -3,6 +3,7 @@
 Run from the repository root: python -m src.workflow
 Each run saves its inputs, candidates, metrics, selection, and predictions to a
 new folder. Audit results never change the validation-selected configuration.
+Use --validation-only for development runs that stop after selecting a candidate.
 """
 
 import argparse
@@ -49,7 +50,7 @@ def expand_candidates(experiment):
     """Build deterministic parameter/feature candidates and shared lookbacks.
 
     Each model's param_grid is a Cartesian product. Omitted parameters resolve
-    to that adapter's defaults. Null feature sets mean the model's fixed inputs.
+    to that adapter's defaults. Null feature sets mean the model's default inputs.
     """
     if not isinstance(experiment, dict) or set(experiment) != {"models", "lookbacks"}:
         raise ValueError("Experiment must contain exactly models and lookbacks.")
@@ -89,9 +90,6 @@ def expand_candidates(experiment):
                 seen.add(fingerprint)
                 candidate_id = f"{name}_{sum(item['model'] == name for item in candidates.values()) + 1:03d}"
                 candidates[candidate_id] = config
-    # TODO(linear-regression): Add its name, parameter grid, and feature_sets to
-    # configs/experiment.json after registering the adapter in src/models.py.
-    # TODO(gradient-boosting): Add its search specification in the same way.
     # Keep grids small initially: fits = candidates * lookbacks * windows.
     return candidates, lookbacks
 
@@ -133,12 +131,15 @@ def tune_models(hourly, experiment, windows=VALIDATION_WINDOWS, *, include_weath
             attach_model_names(summary, candidates), selected)
 
 
-def run_workflow(config_path=DEFAULT_CONFIG, input_path=RAW_PATH, output_dir=None, *, include_weather=False):
-    """Run the full workflow and return the saved run-summary dictionary.
+def run_workflow(config_path=DEFAULT_CONFIG, input_path=RAW_PATH, output_dir=None,
+                 *, include_weather=False, validation_only=False):
+    """Run validation and optionally audit/refit; return the run-summary dictionary.
 
     Existing output directories are refused to avoid mixing runs. Input raw
     data is never modified; processed data is saved inside this run's folder.
     include_weather enables optional historical inputs throughout the run.
+    validation_only stops after validation selection; it never scores the audit
+    or fits a submission forecast. The default still runs the full workflow.
     """
     experiment = load_experiment(config_path)
     candidates, lookbacks = expand_candidates(experiment)
@@ -165,7 +166,8 @@ def run_workflow(config_path=DEFAULT_CONFIG, input_path=RAW_PATH, output_dir=Non
     hourly, _, cleaning = prepare_data(input_path, output_dir / "data_processed",
                                        include_weather=include_weather)
     # Check historical coverage before starting expensive model fits.
-    for window in (*VALIDATION_WINDOWS, AUDIT_WINDOW):
+    coverage_windows = VALIDATION_WINDOWS if validation_only else (*VALIDATION_WINDOWS, AUDIT_WINDOW)
+    for window in coverage_windows:
         for lookback in lookbacks:
             make_fold(hourly, window, lookback)
     fits = len(candidates) * len(lookbacks) * len(VALIDATION_WINDOWS)
@@ -175,6 +177,30 @@ def run_workflow(config_path=DEFAULT_CONFIG, input_path=RAW_PATH, output_dir=Non
     predictions.to_csv(output_dir / "validation_predictions.csv", index=False)
     summary.to_csv(output_dir / "validation_summary.csv", index=False)
     write_json(output_dir / "selected_config.json", selected)
+
+    run_summary = {
+        "status": "complete", "started_utc": started,
+        "raw_input": str(input_path), "raw_input_sha256": input_hash,
+        "source_sha256": {str(path.relative_to(PROJECT_ROOT)): file_sha256(path)
+                          for path in sorted((PROJECT_ROOT / "src").glob("*.py"))},
+        "experiment": experiment, "candidate_history_combinations": len(expanded),
+        "validation_fits": fits, "cleaning": cleaning, "include_weather": include_weather,
+        "validation_only": validation_only, "audit_evaluated": False,
+        "selection": selected, "audit_used_for_selection": False,
+    }
+    print(f"Selected model: {selected['model']}")
+    print(f"Parameters: {json.dumps(selected['params'], sort_keys=True)}")
+    print(f"Features: {json.dumps(selected['features'])}")
+    print(f"Training history: {selected['lookback_years'] or 'all'} years")
+    print(f"Mean validation MAE: {selected['mean_validation_mae']:.4f}")
+    if validation_only:
+        run_summary["completed_utc"] = datetime.now(timezone.utc).isoformat()
+        run_summary["outputs"] = {
+            path.name: str(path) for path in sorted(output_dir.glob("*")) if path.is_file()
+        }
+        write_json(output_dir / "run_summary.json", run_summary)
+        print(f"Validation complete; run details: {output_dir / 'run_summary.json'}")
+        return run_summary
 
     print("Auditing the locked selection and baselines...", flush=True)
     audit_predictors = {name: get_predictor(name) for name in BASELINE_NAMES}
@@ -193,24 +219,13 @@ def run_workflow(config_path=DEFAULT_CONFIG, input_path=RAW_PATH, output_dir=Non
     forecast, history = generate_forecast(hourly, selected, include_weather=include_weather)
     metadata = save_forecast(forecast, history, selected, output_dir / "final_predictions.csv")
     audit_row = audit_metrics.loc[audit_metrics["model"] == selected["model"]].iloc[0]
-    run_summary = {
-        "status": "complete", "started_utc": started,
+    run_summary.update({
         "completed_utc": datetime.now(timezone.utc).isoformat(),
-        "raw_input": str(input_path), "raw_input_sha256": input_hash,
-        "source_sha256": {str(path.relative_to(PROJECT_ROOT)): file_sha256(path)
-                          for path in sorted((PROJECT_ROOT / "src").glob("*.py"))},
-        "experiment": experiment, "candidate_history_combinations": len(expanded),
-        "validation_fits": fits, "cleaning": cleaning, "include_weather": include_weather,
-        "selection": selected, "selected_audit_mae": float(audit_row["mae"]),
-        "audit_used_for_selection": False, "forecast": metadata,
+        "audit_evaluated": True, "selected_audit_mae": float(audit_row["mae"]),
+        "forecast": metadata,
         "outputs": {path.name: str(path) for path in sorted(output_dir.glob("*")) if path.is_file()},
-    }
+    })
     write_json(output_dir / "run_summary.json", run_summary)
-    print(f"Selected model: {selected['model']}")
-    print(f"Parameters: {json.dumps(selected['params'], sort_keys=True)}")
-    print(f"Features: {json.dumps(selected['features'])}")
-    print(f"Training history: {selected['lookback_years'] or 'all'} years")
-    print(f"Mean validation MAE: {selected['mean_validation_mae']:.4f}")
     print(f"Audit MAE: {run_summary['selected_audit_mae']:.4f}")
     print(f"Forecast: {output_dir / 'final_predictions.csv'}")
     print(f"Run details: {output_dir / 'run_summary.json'}")
@@ -223,8 +238,10 @@ def main():
     parser.add_argument("--input", type=Path, default=RAW_PATH)
     parser.add_argument("--output-dir", type=Path, help="New run folder; default is a UTC-timestamped outputs/runs folder.")
     parser.add_argument("--include-weather", action="store_true", help="Include optional historical weather inputs throughout this run.")
+    parser.add_argument("--validation-only", action="store_true", help="Tune/select on validation windows; skip audit scoring and final forecasting.")
     args = parser.parse_args()
-    run_workflow(args.config, args.input, args.output_dir, include_weather=args.include_weather)
+    run_workflow(args.config, args.input, args.output_dir,
+                 include_weather=args.include_weather, validation_only=args.validation_only)
 
 
 if __name__ == "__main__":
