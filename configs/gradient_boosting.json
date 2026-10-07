@@ -1,0 +1,15 @@
+{
+  "lookbacks": [null, 5, 3],
+  "models": [
+    {"name": "month_hour"},
+    {"name": "repeat_last_day"},
+    {
+      "name": "gradient_boosting",
+      "param_grid": {
+        "max_iter": [100, 150],
+        "max_leaf_nodes": [7, 15]
+      },
+      "feature_sets": [null]
+    }
+  ]
+}

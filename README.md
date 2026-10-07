@@ -12,8 +12,7 @@ Linear regression, gradient boosting, and Prophet are the models chosen for comp
 Two simple benchmarks are used for comparison: month/hour climatology and repetition of the
 previous day's temperature profile.
 
-The shared command-line workflow currently supports Prophet and both benchmarks.
-Linear regression and gradient boosting are planned model implementations.
+The shared command-line workflow supports all three models and both benchmarks.
 
 ## Data and forecast conventions
 
@@ -56,6 +55,9 @@ as `NaN`. Missing evaluation labels are excluded from scoring and are not filled
 | `src/models.py` | Model registry, resolved parameters, and used-feature descriptions |
 | `src/workflow.py` | One-command data preparation, tuning, selection, audit, and forecast |
 | `src/prophet_model.py` | Prophet model and forecasting adapter |
+| `src/linear_regression_model.py` | Two-stage linear regression and forecasting adapter |
+| `src/gradient_boosting_model.py` | Gradient boosting and calendar/recursive/direct forecasting adapter |
+| `src/gradient_boosting_features.py` | Past-temperature lags and fixed forecast-origin context |
 | `src/forecast.py` | Selected-model refitting and final predictions |
 | `configs/` | Small, editable experiment search specifications |
 | `tests/` | Shared data and forecasting contract checks |
@@ -89,12 +91,13 @@ on all five validation windows, selects the lowest equal-window mean MAE, audits
 that locked selection alongside the baselines, then refits it through the final
 cutoff and generates all 336 predictions. It does not download new observations.
 
-The default `configs/experiment.json` compares both baselines and four Prophet
-parameter combinations, each with all available, five-year, and three-year
+The default `configs/experiment.json` compares both baselines, four Prophet
+parameter combinations, one linear regression configuration, and one gradient
+boosting configuration, each with all available, five-year, and three-year
 training histories. The Prophet search varies `changepoint_prior_scale` between
 0.005 and 0.05 and `daily_fourier_order` between 6 and 16. Other parameters retain
 the existing adapter defaults; the teammate's original configuration is included.
-This is 18 candidate/history combinations and 90 validation fits, including 60
+This is 24 candidate/history combinations and 120 validation fits, including 60
 Prophet fits. Runtime depends on your computer and the training histories.
 
 For a faster full workflow using just the baselines:
@@ -127,8 +130,28 @@ standalone pipeline still writes to `data/processed/`.
 
 The terminal reports the selected model, parameters, features/components,
 training history, validation MAE, audit MAE, and forecast location. A baseline
-can win; selection is always limited to the configured candidates. Linear
-regression and gradient boosting are not implemented yet.
+can win; selection is always limited to the configured candidates.
+
+### Gradient boosting experiments
+
+`notebooks/gradient_boosting_analysis.ipynb` follows the calendar, recursive-lag,
+weather, parameter, and training-history experiments in order. It includes visible
+results and loads one compact `notebooks/gradient_boosting_results.json` cache by
+default. Set its `RUN_STAGES` list to refit selected experiments through the shared
+tuning function; a complete replay is 450 validation fits. The recorded input hash
+guards against silently mixing results from different raw datasets.
+
+For the smaller repeatable development search (90 fits), without audit scoring
+or a final forecast:
+
+```bash
+python -m src.workflow --config configs/gradient_boosting.json --validation-only
+```
+
+It compares 100/150 iterations and 7/15 leaves with combined calendar inputs and
+all/five/three-year histories. The main experiment uses the recommended default:
+learning rate 0.05, 150 iterations, 7 leaves, minimum leaf size 50, and L2 penalty 1.
+The workflow still selects the training-history length from validation.
 
 ### Configure experiments
 
@@ -143,11 +166,14 @@ components; it does not consume the shared calendar columns as regressors.
 The saved feature description reports those actual components and Fourier
 orders. Changing those orders is part of the Prophet search.
 
-Future regression/boosting adapters can accept explicit column lists as feature
-sets. Their registry entries must validate and describe the features they use,
-and pass the selected columns to the adapter. TODO comments in `src/models.py`
-and `src/workflow.py` identify the integration points. Until registered, an
-unsupported model fails clearly rather than being skipped.
+Gradient boosting accepts explicit feature-column lists, validates their names,
+and describes their actual use in saved configurations. `null` selects the seven
+shared calendar/cyclic features. Adding `lag_1` and `lag_24` selects recursive
+forecasting; adding `forecast_hour` and temperature context selects a direct
+forecast from fixed pre-origin conditions. Weather feature sets require
+`--include-weather`. Linear regression uses its own Fourier and anomaly features;
+its feature-set entry remains `null`. Each model's settings are resolved in
+`src/models.py` and passed to its shared forecasting adapter.
 
 The audit period has already been examined in earlier experiments. Disclose
 any use of its results when discussing the final evaluation. The automated
@@ -165,6 +191,12 @@ This writes the following files to `data/processed/`:
 - `cleaning_report.json`: cleaning counts, cutoff, and data coverage.
 - `train.csv`, `val.csv`, and `test.csv`: chronological splits with shared features
   for the notebook workflows.
+
+Use `python -m src.data_pipeline --include-weather` to retain available historical
+dew point, wind, humidity, pressure, cloud, and precipitation columns in `hourly.csv`.
+The default is temperature only; legacy split columns stay unchanged. Weather is
+passed only in pre-origin history. Means require 18 of 24 observations, precipitation
+totals require 24, and missing inputs remain NaN for histogram boosting to handle.
 
 `hourly.csv` is generated by this command. Prepare it before running backtesting
 or final forecasting. The data pipeline notebook also calls the shared preparation
@@ -195,7 +227,7 @@ Compare the supported models using all available history and rolling five-year
 and three-year histories:
 
 ```bash
-python -m src.backtesting --models month_hour repeat_last_day prophet --lookbacks all 5 3
+python -m src.backtesting --models month_hour repeat_last_day prophet linear_regression gradient_boosting --lookbacks all 5 3
 ```
 
 For a fast baseline-only comparison:
@@ -283,4 +315,6 @@ python -m unittest discover -s tests -v
 The checks cover time boundaries, cleaning, missing targets, training histories,
 forecast completeness, benchmark alignment, metrics, and model adapter behavior.
 The Prophet adapter test uses a stand-in model; live Prophet fitting is checked
-separately by running its forecasting workflow.
+separately by running its forecasting workflow. Gradient boosting checks include
+real-estimator forecasts, pre-origin feature timing, recursive feedback, missing
+inputs, saved settings, and validation-only/full workflow behavior.
