@@ -1,0 +1,614 @@
+[
+  {
+    "model": "month_hour",
+    "params": {},
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds"
+      ],
+      "components": [
+        "training UTC month/hour temperature means",
+        "training global mean fallback"
+      ]
+    },
+    "candidate_id": "month_hour_001",
+    "lookback_years": null
+  },
+  {
+    "model": "month_hour",
+    "params": {},
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds"
+      ],
+      "components": [
+        "training UTC month/hour temperature means",
+        "training global mean fallback"
+      ]
+    },
+    "candidate_id": "month_hour_001",
+    "lookback_years": 5
+  },
+  {
+    "model": "month_hour",
+    "params": {},
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds"
+      ],
+      "components": [
+        "training UTC month/hour temperature means",
+        "training global mean fallback"
+      ]
+    },
+    "candidate_id": "month_hour_001",
+    "lookback_years": 3
+  },
+  {
+    "model": "repeat_last_day",
+    "params": {},
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds"
+      ],
+      "components": [
+        "previous 24 elapsed-hour temperatures, repeated without future updates",
+        "training UTC month/hour temperature means",
+        "training global mean fallback"
+      ]
+    },
+    "candidate_id": "repeat_last_day_001",
+    "lookback_years": null
+  },
+  {
+    "model": "repeat_last_day",
+    "params": {},
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds"
+      ],
+      "components": [
+        "previous 24 elapsed-hour temperatures, repeated without future updates",
+        "training UTC month/hour temperature means",
+        "training global mean fallback"
+      ]
+    },
+    "candidate_id": "repeat_last_day_001",
+    "lookback_years": 5
+  },
+  {
+    "model": "repeat_last_day",
+    "params": {},
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds"
+      ],
+      "components": [
+        "previous 24 elapsed-hour temperatures, repeated without future updates",
+        "training UTC month/hour temperature means",
+        "training global mean fallback"
+      ]
+    },
+    "candidate_id": "repeat_last_day_001",
+    "lookback_years": 3
+  },
+  {
+    "model": "prophet",
+    "params": {
+      "changepoint_prior_scale": 0.005,
+      "seasonality_prior_scale": 1.0,
+      "weekly_seasonality": true,
+      "daily_fourier_order": 6,
+      "yearly_fourier_order": 20
+    },
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds"
+      ],
+      "components": [
+        "piecewise linear trend with Prophet automatic changepoints",
+        "daily Fourier seasonality, order 6",
+        "yearly Fourier seasonality, order 20",
+        "weekly Fourier seasonality, Prophet default order 3"
+      ]
+    },
+    "candidate_id": "prophet_001",
+    "lookback_years": null
+  },
+  {
+    "model": "prophet",
+    "params": {
+      "changepoint_prior_scale": 0.005,
+      "seasonality_prior_scale": 1.0,
+      "weekly_seasonality": true,
+      "daily_fourier_order": 6,
+      "yearly_fourier_order": 20
+    },
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds"
+      ],
+      "components": [
+        "piecewise linear trend with Prophet automatic changepoints",
+        "daily Fourier seasonality, order 6",
+        "yearly Fourier seasonality, order 20",
+        "weekly Fourier seasonality, Prophet default order 3"
+      ]
+    },
+    "candidate_id": "prophet_001",
+    "lookback_years": 5
+  },
+  {
+    "model": "prophet",
+    "params": {
+      "changepoint_prior_scale": 0.005,
+      "seasonality_prior_scale": 1.0,
+      "weekly_seasonality": true,
+      "daily_fourier_order": 6,
+      "yearly_fourier_order": 20
+    },
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds"
+      ],
+      "components": [
+        "piecewise linear trend with Prophet automatic changepoints",
+        "daily Fourier seasonality, order 6",
+        "yearly Fourier seasonality, order 20",
+        "weekly Fourier seasonality, Prophet default order 3"
+      ]
+    },
+    "candidate_id": "prophet_001",
+    "lookback_years": 3
+  },
+  {
+    "model": "prophet",
+    "params": {
+      "changepoint_prior_scale": 0.005,
+      "seasonality_prior_scale": 1.0,
+      "weekly_seasonality": true,
+      "daily_fourier_order": 16,
+      "yearly_fourier_order": 20
+    },
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds"
+      ],
+      "components": [
+        "piecewise linear trend with Prophet automatic changepoints",
+        "daily Fourier seasonality, order 16",
+        "yearly Fourier seasonality, order 20",
+        "weekly Fourier seasonality, Prophet default order 3"
+      ]
+    },
+    "candidate_id": "prophet_002",
+    "lookback_years": null
+  },
+  {
+    "model": "prophet",
+    "params": {
+      "changepoint_prior_scale": 0.005,
+      "seasonality_prior_scale": 1.0,
+      "weekly_seasonality": true,
+      "daily_fourier_order": 16,
+      "yearly_fourier_order": 20
+    },
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds"
+      ],
+      "components": [
+        "piecewise linear trend with Prophet automatic changepoints",
+        "daily Fourier seasonality, order 16",
+        "yearly Fourier seasonality, order 20",
+        "weekly Fourier seasonality, Prophet default order 3"
+      ]
+    },
+    "candidate_id": "prophet_002",
+    "lookback_years": 5
+  },
+  {
+    "model": "prophet",
+    "params": {
+      "changepoint_prior_scale": 0.005,
+      "seasonality_prior_scale": 1.0,
+      "weekly_seasonality": true,
+      "daily_fourier_order": 16,
+      "yearly_fourier_order": 20
+    },
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds"
+      ],
+      "components": [
+        "piecewise linear trend with Prophet automatic changepoints",
+        "daily Fourier seasonality, order 16",
+        "yearly Fourier seasonality, order 20",
+        "weekly Fourier seasonality, Prophet default order 3"
+      ]
+    },
+    "candidate_id": "prophet_002",
+    "lookback_years": 3
+  },
+  {
+    "model": "prophet",
+    "params": {
+      "changepoint_prior_scale": 0.05,
+      "seasonality_prior_scale": 1.0,
+      "weekly_seasonality": true,
+      "daily_fourier_order": 6,
+      "yearly_fourier_order": 20
+    },
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds"
+      ],
+      "components": [
+        "piecewise linear trend with Prophet automatic changepoints",
+        "daily Fourier seasonality, order 6",
+        "yearly Fourier seasonality, order 20",
+        "weekly Fourier seasonality, Prophet default order 3"
+      ]
+    },
+    "candidate_id": "prophet_003",
+    "lookback_years": null
+  },
+  {
+    "model": "prophet",
+    "params": {
+      "changepoint_prior_scale": 0.05,
+      "seasonality_prior_scale": 1.0,
+      "weekly_seasonality": true,
+      "daily_fourier_order": 6,
+      "yearly_fourier_order": 20
+    },
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds"
+      ],
+      "components": [
+        "piecewise linear trend with Prophet automatic changepoints",
+        "daily Fourier seasonality, order 6",
+        "yearly Fourier seasonality, order 20",
+        "weekly Fourier seasonality, Prophet default order 3"
+      ]
+    },
+    "candidate_id": "prophet_003",
+    "lookback_years": 5
+  },
+  {
+    "model": "prophet",
+    "params": {
+      "changepoint_prior_scale": 0.05,
+      "seasonality_prior_scale": 1.0,
+      "weekly_seasonality": true,
+      "daily_fourier_order": 6,
+      "yearly_fourier_order": 20
+    },
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds"
+      ],
+      "components": [
+        "piecewise linear trend with Prophet automatic changepoints",
+        "daily Fourier seasonality, order 6",
+        "yearly Fourier seasonality, order 20",
+        "weekly Fourier seasonality, Prophet default order 3"
+      ]
+    },
+    "candidate_id": "prophet_003",
+    "lookback_years": 3
+  },
+  {
+    "model": "prophet",
+    "params": {
+      "changepoint_prior_scale": 0.05,
+      "seasonality_prior_scale": 1.0,
+      "weekly_seasonality": true,
+      "daily_fourier_order": 16,
+      "yearly_fourier_order": 20
+    },
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds"
+      ],
+      "components": [
+        "piecewise linear trend with Prophet automatic changepoints",
+        "daily Fourier seasonality, order 16",
+        "yearly Fourier seasonality, order 20",
+        "weekly Fourier seasonality, Prophet default order 3"
+      ]
+    },
+    "candidate_id": "prophet_004",
+    "lookback_years": null
+  },
+  {
+    "model": "prophet",
+    "params": {
+      "changepoint_prior_scale": 0.05,
+      "seasonality_prior_scale": 1.0,
+      "weekly_seasonality": true,
+      "daily_fourier_order": 16,
+      "yearly_fourier_order": 20
+    },
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds"
+      ],
+      "components": [
+        "piecewise linear trend with Prophet automatic changepoints",
+        "daily Fourier seasonality, order 16",
+        "yearly Fourier seasonality, order 20",
+        "weekly Fourier seasonality, Prophet default order 3"
+      ]
+    },
+    "candidate_id": "prophet_004",
+    "lookback_years": 5
+  },
+  {
+    "model": "prophet",
+    "params": {
+      "changepoint_prior_scale": 0.05,
+      "seasonality_prior_scale": 1.0,
+      "weekly_seasonality": true,
+      "daily_fourier_order": 16,
+      "yearly_fourier_order": 20
+    },
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds"
+      ],
+      "components": [
+        "piecewise linear trend with Prophet automatic changepoints",
+        "daily Fourier seasonality, order 16",
+        "yearly Fourier seasonality, order 20",
+        "weekly Fourier seasonality, Prophet default order 3"
+      ]
+    },
+    "candidate_id": "prophet_004",
+    "lookback_years": 3
+  },
+  {
+    "model": "linear_regression",
+    "params": {
+      "k_daily": 4,
+      "k_annual": 3,
+      "k_interact": 1,
+      "trend": true,
+      "anomaly": "rich",
+      "regularization": "lasso",
+      "alpha": 0.01,
+      "origin_step_days": 2,
+      "season_window_days": null
+    },
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds",
+        "y (history only)"
+      ],
+      "components": [
+        "stage 1: daily Fourier harmonics, order 4 (UTC hour)",
+        "stage 1: annual Fourier harmonics, order 3",
+        "stage 1: daily x annual interactions up to daily order 1",
+        "stage 1: linear trend in years since 2015",
+        "stage 2 (lasso, alpha=0.01): recent anomaly vs stage 1 (rich set) x exp(-h/tau), only pre-origin data"
+      ]
+    },
+    "candidate_id": "linear_regression_001",
+    "lookback_years": null
+  },
+  {
+    "model": "linear_regression",
+    "params": {
+      "k_daily": 4,
+      "k_annual": 3,
+      "k_interact": 1,
+      "trend": true,
+      "anomaly": "rich",
+      "regularization": "lasso",
+      "alpha": 0.01,
+      "origin_step_days": 2,
+      "season_window_days": null
+    },
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds",
+        "y (history only)"
+      ],
+      "components": [
+        "stage 1: daily Fourier harmonics, order 4 (UTC hour)",
+        "stage 1: annual Fourier harmonics, order 3",
+        "stage 1: daily x annual interactions up to daily order 1",
+        "stage 1: linear trend in years since 2015",
+        "stage 2 (lasso, alpha=0.01): recent anomaly vs stage 1 (rich set) x exp(-h/tau), only pre-origin data"
+      ]
+    },
+    "candidate_id": "linear_regression_001",
+    "lookback_years": 5
+  },
+  {
+    "model": "linear_regression",
+    "params": {
+      "k_daily": 4,
+      "k_annual": 3,
+      "k_interact": 1,
+      "trend": true,
+      "anomaly": "rich",
+      "regularization": "lasso",
+      "alpha": 0.01,
+      "origin_step_days": 2,
+      "season_window_days": null
+    },
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds",
+        "y (history only)"
+      ],
+      "components": [
+        "stage 1: daily Fourier harmonics, order 4 (UTC hour)",
+        "stage 1: annual Fourier harmonics, order 3",
+        "stage 1: daily x annual interactions up to daily order 1",
+        "stage 1: linear trend in years since 2015",
+        "stage 2 (lasso, alpha=0.01): recent anomaly vs stage 1 (rich set) x exp(-h/tau), only pre-origin data"
+      ]
+    },
+    "candidate_id": "linear_regression_001",
+    "lookback_years": 3
+  },
+  {
+    "model": "gradient_boosting",
+    "params": {
+      "loss": "squared_error",
+      "learning_rate": 0.05,
+      "max_iter": 150,
+      "max_leaf_nodes": 7,
+      "max_depth": null,
+      "min_samples_leaf": 100,
+      "l2_regularization": 1.0,
+      "early_stopping": false,
+      "random_state": 520
+    },
+    "feature_columns": [
+      "hour",
+      "month",
+      "dayofyear",
+      "hour_sin",
+      "hour_cos",
+      "year_sin",
+      "year_cos"
+    ],
+    "features": {
+      "input_columns": [
+        "hour",
+        "month",
+        "dayofyear",
+        "hour_sin",
+        "hour_cos",
+        "year_sin",
+        "year_cos"
+      ],
+      "historical_input_columns": [
+        "ds",
+        "y"
+      ],
+      "forecast_strategy": "calendar",
+      "components": [
+        "numeric inputs; missing values handled by the estimator",
+        "shared UTC calendar/cyclic definitions"
+      ]
+    },
+    "candidate_id": "gradient_boosting_001",
+    "lookback_years": null
+  },
+  {
+    "model": "gradient_boosting",
+    "params": {
+      "loss": "squared_error",
+      "learning_rate": 0.05,
+      "max_iter": 150,
+      "max_leaf_nodes": 7,
+      "max_depth": null,
+      "min_samples_leaf": 100,
+      "l2_regularization": 1.0,
+      "early_stopping": false,
+      "random_state": 520
+    },
+    "feature_columns": [
+      "hour",
+      "month",
+      "dayofyear",
+      "hour_sin",
+      "hour_cos",
+      "year_sin",
+      "year_cos"
+    ],
+    "features": {
+      "input_columns": [
+        "hour",
+        "month",
+        "dayofyear",
+        "hour_sin",
+        "hour_cos",
+        "year_sin",
+        "year_cos"
+      ],
+      "historical_input_columns": [
+        "ds",
+        "y"
+      ],
+      "forecast_strategy": "calendar",
+      "components": [
+        "numeric inputs; missing values handled by the estimator",
+        "shared UTC calendar/cyclic definitions"
+      ]
+    },
+    "candidate_id": "gradient_boosting_001",
+    "lookback_years": 5
+  },
+  {
+    "model": "gradient_boosting",
+    "params": {
+      "loss": "squared_error",
+      "learning_rate": 0.05,
+      "max_iter": 150,
+      "max_leaf_nodes": 7,
+      "max_depth": null,
+      "min_samples_leaf": 100,
+      "l2_regularization": 1.0,
+      "early_stopping": false,
+      "random_state": 520
+    },
+    "feature_columns": [
+      "hour",
+      "month",
+      "dayofyear",
+      "hour_sin",
+      "hour_cos",
+      "year_sin",
+      "year_cos"
+    ],
+    "features": {
+      "input_columns": [
+        "hour",
+        "month",
+        "dayofyear",
+        "hour_sin",
+        "hour_cos",
+        "year_sin",
+        "year_cos"
+      ],
+      "historical_input_columns": [
+        "ds",
+        "y"
+      ],
+      "forecast_strategy": "calendar",
+      "components": [
+        "numeric inputs; missing values handled by the estimator",
+        "shared UTC calendar/cyclic definitions"
+      ]
+    },
+    "candidate_id": "gradient_boosting_001",
+    "lookback_years": 3
+  }
+]

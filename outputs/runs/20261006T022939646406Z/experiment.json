@@ -1,0 +1,43 @@
+{
+  "lookbacks": [
+    null,
+    5,
+    3
+  ],
+  "models": [
+    {
+      "name": "month_hour"
+    },
+    {
+      "name": "repeat_last_day"
+    },
+    {
+      "name": "prophet",
+      "param_grid": {
+        "changepoint_prior_scale": [
+          0.005,
+          0.05
+        ],
+        "daily_fourier_order": [
+          6,
+          16
+        ]
+      },
+      "feature_sets": [
+        null
+      ]
+    },
+    {
+      "name": "linear_regression",
+      "feature_sets": [
+        null
+      ]
+    },
+    {
+      "name": "gradient_boosting",
+      "feature_sets": [
+        null
+      ]
+    }
+  ]
+}
