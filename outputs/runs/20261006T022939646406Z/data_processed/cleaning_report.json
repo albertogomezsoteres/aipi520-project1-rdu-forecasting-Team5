@@ -1,0 +1,33 @@
+{
+  "input": "/Users/nicholaswang/Documents/Duke/AIPI-520/Project 1/aipi520-project1-rdu-forecasting/data/raw/RDU_starting2015_UTC.csv",
+  "start_utc": "2015-01-01T00:00:00+00:00",
+  "end_exclusive_utc": "2026-09-17T04:00:00+00:00",
+  "observation_policy": "valid temperature nearest :51 within the containing UTC hour",
+  "cleaning": {
+    "Non-numeric temperatures converted to NaN": 0,
+    "Identical duplicate rows removed": 0,
+    "Repeated exact timestamps": 2,
+    "Hours with multiple records": 3,
+    "Hours using :51 observations": 102490,
+    "Hours using other-minute observations": 5,
+    "Hours without any report": 150,
+    "Reported hours without valid temperature": 7,
+    "Total missing targets": 157,
+    "Total hours": 102652,
+    "Observed targets": 102495
+  },
+  "splits": {
+    "train": {
+      "hours": 101980,
+      "observed_targets": 101823
+    },
+    "val": {
+      "hours": 336,
+      "observed_targets": 336
+    },
+    "test": {
+      "hours": 336,
+      "observed_targets": 336
+    }
+  }
+}

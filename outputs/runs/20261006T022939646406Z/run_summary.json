@@ -1,0 +1,205 @@
+{
+  "status": "complete",
+  "started_utc": "2026-10-06T02:29:39.646742+00:00",
+  "raw_input": "/Users/nicholaswang/Documents/Duke/AIPI-520/Project 1/aipi520-project1-rdu-forecasting/data/raw/RDU_starting2015_UTC.csv",
+  "raw_input_sha256": "25a4cbff246641c30d3d446f4bbf50ca84bced74f715db06122feb8674e455db",
+  "source_sha256": {
+    "src/__init__.py": "4ef76574cc6c81a08855ca03c1292ca733845a4be6cb60d16cdcdf12581d9eee",
+    "src/backtesting.py": "2fd6687c014b682cf1135efa3a4ed2d9478b37ba559fb3f4c8311dd3a8f22048",
+    "src/baselines.py": "030517d237334ed70a3ce32b3b21095cb2d2c71af888bf1420c9a4d510509e8b",
+    "src/config.py": "99a00373795c91171dbde9f1d5d45f18df9923a86439d0df6303a5e16ed6903b",
+    "src/data_pipeline.py": "cc5b12f1d11992af88698f1859e168f7ef82e4a5247ff21457103c1733152915",
+    "src/evaluation.py": "592bb37591c255ae8aacf8ac42d68ca7b0211e6569e7f79207ab024c2731b40c",
+    "src/features.py": "dd75b87cc74cde103f20bd40703f2ba1c57933c3b99fe0dc9c535f9b072136c6",
+    "src/forecast.py": "4f97838ce76fa85d5d9a4447c910567a9c6b89c0b1242dd2add06a39422291ea",
+    "src/gradient_boosting_features.py": "88caf467158ae235bd7ec48fefd0b940c658dab28814746af8485637447e9982",
+    "src/gradient_boosting_model.py": "c2548bd6face0a6b932af317674c4721edfac22820678c438d8ede2174e3c449",
+    "src/linear_regression_model.py": "c275e0cf0e799366b208662cd8caf0c8c589d77d6051ff7999a33f920687caeb",
+    "src/models.py": "710a5c837c4b9b7cb0b494044aaf79a3fada4e87f018c22aca606c3189cb0661",
+    "src/prophet_model.py": "0af8e7150bb6f2dadd07e44f98bbabc6c557ebe536f5680aaa4be2d3373c4954",
+    "src/workflow.py": "0175f7398288ed999b98c8bf1bab54f6153768949e4c3fe8c03916d369dff2d7"
+  },
+  "experiment": {
+    "lookbacks": [
+      null,
+      5,
+      3
+    ],
+    "models": [
+      {
+        "name": "month_hour"
+      },
+      {
+        "name": "repeat_last_day"
+      },
+      {
+        "name": "prophet",
+        "param_grid": {
+          "changepoint_prior_scale": [
+            0.005,
+            0.05
+          ],
+          "daily_fourier_order": [
+            6,
+            16
+          ]
+        },
+        "feature_sets": [
+          null
+        ]
+      },
+      {
+        "name": "linear_regression",
+        "feature_sets": [
+          null
+        ]
+      },
+      {
+        "name": "gradient_boosting",
+        "feature_sets": [
+          null
+        ]
+      }
+    ]
+  },
+  "candidate_history_combinations": 24,
+  "validation_fits": 120,
+  "cleaning": {
+    "Non-numeric temperatures converted to NaN": 0,
+    "Identical duplicate rows removed": 0,
+    "Repeated exact timestamps": 2,
+    "Hours with multiple records": 3,
+    "Hours using :51 observations": 102490,
+    "Hours using other-minute observations": 5,
+    "Hours without any report": 150,
+    "Reported hours without valid temperature": 7,
+    "Total missing targets": 157,
+    "Total hours": 102652,
+    "Observed targets": 102495
+  },
+  "include_weather": false,
+  "validation_only": false,
+  "audit_evaluated": true,
+  "selection": {
+    "model": "linear_regression",
+    "params": {
+      "k_daily": 4,
+      "k_annual": 3,
+      "k_interact": 1,
+      "trend": true,
+      "anomaly": "rich",
+      "regularization": "lasso",
+      "alpha": 0.01,
+      "origin_step_days": 2,
+      "season_window_days": null
+    },
+    "feature_columns": null,
+    "features": {
+      "input_columns": [
+        "ds",
+        "y (history only)"
+      ],
+      "components": [
+        "stage 1: daily Fourier harmonics, order 4 (UTC hour)",
+        "stage 1: annual Fourier harmonics, order 3",
+        "stage 1: daily x annual interactions up to daily order 1",
+        "stage 1: linear trend in years since 2015",
+        "stage 2 (lasso, alpha=0.01): recent anomaly vs stage 1 (rich set) x exp(-h/tau), only pre-origin data"
+      ]
+    },
+    "candidate_id": "linear_regression_001",
+    "lookback_years": null,
+    "selection_metric": "equal_window_mean_mae",
+    "tie_breakers": [
+      "worst_window_mae",
+      "candidate_id",
+      "lookback"
+    ],
+    "validation_windows": [
+      "september_2022",
+      "september_2023",
+      "september_2024",
+      "september_2025",
+      "recent_2026"
+    ],
+    "mean_validation_mae": 4.673968162329145
+  },
+  "audit_used_for_selection": false,
+  "completed_utc": "2026-10-06T02:45:02.183634+00:00",
+  "selected_audit_mae": 4.2306850177802415,
+  "forecast": {
+    "selection": {
+      "model": "linear_regression",
+      "params": {
+        "k_daily": 4,
+        "k_annual": 3,
+        "k_interact": 1,
+        "trend": true,
+        "anomaly": "rich",
+        "regularization": "lasso",
+        "alpha": 0.01,
+        "origin_step_days": 2,
+        "season_window_days": null
+      },
+      "feature_columns": null,
+      "features": {
+        "input_columns": [
+          "ds",
+          "y (history only)"
+        ],
+        "components": [
+          "stage 1: daily Fourier harmonics, order 4 (UTC hour)",
+          "stage 1: annual Fourier harmonics, order 3",
+          "stage 1: daily x annual interactions up to daily order 1",
+          "stage 1: linear trend in years since 2015",
+          "stage 2 (lasso, alpha=0.01): recent anomaly vs stage 1 (rich set) x exp(-h/tau), only pre-origin data"
+        ]
+      },
+      "candidate_id": "linear_regression_001",
+      "lookback_years": null,
+      "selection_metric": "equal_window_mean_mae",
+      "tie_breakers": [
+        "worst_window_mae",
+        "candidate_id",
+        "lookback"
+      ],
+      "validation_windows": [
+        "september_2022",
+        "september_2023",
+        "september_2024",
+        "september_2025",
+        "recent_2026"
+      ],
+      "mean_validation_mae": 4.673968162329145
+    },
+    "origin_utc": "2026-09-17T04:00:00+00:00",
+    "end_exclusive_utc": "2026-10-01T04:00:00+00:00",
+    "observation_policy": "valid temperature nearest :51 within the containing UTC hour",
+    "target_unit": "degF",
+    "train_start_utc": "2015-01-01T00:00:00+00:00",
+    "train_last_hour_utc": "2026-09-17T03:00:00+00:00",
+    "train_hours": 102652,
+    "train_observed_targets": 102495,
+    "prediction_hours": 336,
+    "package_versions": {
+      "numpy": "2.2.6",
+      "pandas": "2.3.3",
+      "scikit-learn": "1.7.2",
+      "prophet": "1.5.0",
+      "cmdstanpy": "1.3.0"
+    }
+  },
+  "outputs": {
+    "audit_metrics.csv": "/Users/nicholaswang/Documents/Duke/AIPI-520/Project 1/aipi520-project1-rdu-forecasting/outputs/runs/20261006T022939646406Z/audit_metrics.csv",
+    "audit_predictions.csv": "/Users/nicholaswang/Documents/Duke/AIPI-520/Project 1/aipi520-project1-rdu-forecasting/outputs/runs/20261006T022939646406Z/audit_predictions.csv",
+    "audit_summary.csv": "/Users/nicholaswang/Documents/Duke/AIPI-520/Project 1/aipi520-project1-rdu-forecasting/outputs/runs/20261006T022939646406Z/audit_summary.csv",
+    "candidate_configs.json": "/Users/nicholaswang/Documents/Duke/AIPI-520/Project 1/aipi520-project1-rdu-forecasting/outputs/runs/20261006T022939646406Z/candidate_configs.json",
+    "experiment.json": "/Users/nicholaswang/Documents/Duke/AIPI-520/Project 1/aipi520-project1-rdu-forecasting/outputs/runs/20261006T022939646406Z/experiment.json",
+    "final_predictions.csv": "/Users/nicholaswang/Documents/Duke/AIPI-520/Project 1/aipi520-project1-rdu-forecasting/outputs/runs/20261006T022939646406Z/final_predictions.csv",
+    "final_predictions.json": "/Users/nicholaswang/Documents/Duke/AIPI-520/Project 1/aipi520-project1-rdu-forecasting/outputs/runs/20261006T022939646406Z/final_predictions.json",
+    "selected_config.json": "/Users/nicholaswang/Documents/Duke/AIPI-520/Project 1/aipi520-project1-rdu-forecasting/outputs/runs/20261006T022939646406Z/selected_config.json",
+    "validation_metrics.csv": "/Users/nicholaswang/Documents/Duke/AIPI-520/Project 1/aipi520-project1-rdu-forecasting/outputs/runs/20261006T022939646406Z/validation_metrics.csv",
+    "validation_predictions.csv": "/Users/nicholaswang/Documents/Duke/AIPI-520/Project 1/aipi520-project1-rdu-forecasting/outputs/runs/20261006T022939646406Z/validation_predictions.csv",
+    "validation_summary.csv": "/Users/nicholaswang/Documents/Duke/AIPI-520/Project 1/aipi520-project1-rdu-forecasting/outputs/runs/20261006T022939646406Z/validation_summary.csv"
+  }
+}
